@@ -1,67 +1,161 @@
 package middleware
 
 import (
-  "context"
-  "encoding/json"
-  "fmt"
-  "io/ioutil"
-  "net/http"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
 )
 
+// add profile image
 func UploadFile(next http.HandlerFunc) http.HandlerFunc {
-  return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    // Upload file
-    // FormFile returns the first file for the given key `myFile`
-    // it also returns the FileHeader so we can get the Filename,
-    // the Header and the size of the file
-    file, _, err := r.FormFile("image")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-    if err != nil {
-      fmt.Println(err)
-      json.NewEncoder(w).Encode("Error Retrieving the File")
-      return
-    }
-    defer file.Close()
-    // fmt.Printf("Uploaded File: %+v\n", handler.Filename)
-    // fmt.Printf("File Size: %+v\n", handler.Size)
-    // fmt.Printf("MIME Header: %+v\n", handler.Header)
-    const MAX_UPLOAD_SIZE = 10 << 20 // 10MB
-    // Parse our multipart form, 10 << 20 specifies a maximum
-    // upload of 10 MB files.
-    r.ParseMultipartForm(MAX_UPLOAD_SIZE)
-    if r.ContentLength > MAX_UPLOAD_SIZE {
-      w.WriteHeader(http.StatusBadRequest)
-      response := Result{Code: http.StatusBadRequest, Message: "Max size in 1mb"}
-      json.NewEncoder(w).Encode(response)
-      return
-    }
+		file, _, err := r.FormFile("image")
 
-    // Create a temporary file within our temp-images directory that follows
-    // a particular naming pattern
-    tempFile, err := ioutil.TempFile("uploads", "image-*.png")
-    if err != nil {
-      fmt.Println(err)
-      fmt.Println("path upload error")
-      json.NewEncoder(w).Encode(err)
-      return
-    }
-    defer tempFile.Close()
+		if err != nil {
+			fmt.Println(err)
+			json.NewEncoder(w).Encode("Error Retrieving the File")
+			return
+		}
+		defer file.Close()
+		const MAX_UPLOAD_SIZE = 10 << 20 // 10MB
+		// Parse our multipart form, 10 << 20 specifies a maximum
+		// upload of 10 MB files.
+		r.ParseMultipartForm(MAX_UPLOAD_SIZE)
+		if r.ContentLength > MAX_UPLOAD_SIZE {
+			w.WriteHeader(http.StatusBadRequest)
+			response := Result{Code: http.StatusBadRequest, Message: "Max size in 1mb"}
+			json.NewEncoder(w).Encode(response)
+			return
+		}
 
-    // read all of the contents of our uploaded file into a
-    // byte array
-    fileBytes, err := ioutil.ReadAll(file)
-    if err != nil {
-      fmt.Println(err)
-    }
+		// Create a temporary file within our temp-images directory that follows
+		// a particular naming pattern
+		tempFile, err := ioutil.TempFile("uploads", "image-*.png")
+		if err != nil {
+			fmt.Println(err)
+			fmt.Println("path upload error")
+			json.NewEncoder(w).Encode(err)
+			return
+		}
+		defer tempFile.Close()
 
-    // write this byte array to our temporary file
-    tempFile.Write(fileBytes)
+		// read all of the contents of our uploaded file into a
+		// byte array
+		fileBytes, err := ioutil.ReadAll(file)
+		if err != nil {
+			fmt.Println(err)
+		}
 
-    data := tempFile.Name()
-    filename := data[8:] // split uploads/
+		// write this byte array to our temporary file
+		tempFile.Write(fileBytes)
 
-    // add filename to ctx
-    ctx := context.WithValue(r.Context(), "dataFile", filename)
-    next.ServeHTTP(w, r.WithContext(ctx))
-  })
+		data := tempFile.Name()
+		filename := data[8:] // split uploads/
+
+		// add filename to ctx
+		ctx := context.WithValue(r.Context(), "dataFile", filename)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// add thumbnail housy
+func UploadThumbnail(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		file, _, err := r.FormFile("thumbnail")
+
+		if err != nil {
+			fmt.Println(err)
+			json.NewEncoder(w).Encode("Error Retrieving the File")
+			return
+		}
+		defer file.Close()
+		const MAX_UPLOAD_SIZE = 10 << 20 // 10MB
+		// Parse our multipart form, 10 << 20 specifies a maximum
+		// upload of 10 MB files.
+		r.ParseMultipartForm(MAX_UPLOAD_SIZE)
+		if r.ContentLength > MAX_UPLOAD_SIZE {
+			w.WriteHeader(http.StatusBadRequest)
+			response := Result{Code: http.StatusBadRequest, Message: "Max size in 1mb"}
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+
+		// Create a temporary file within our temp-images directory that follows
+		// a particular naming pattern
+		tempFile, err := ioutil.TempFile("uploads", "image-*.png")
+		if err != nil {
+			fmt.Println(err)
+			fmt.Println("path upload error")
+			json.NewEncoder(w).Encode(err)
+			return
+		}
+		defer tempFile.Close()
+
+		// read all of the contents of our uploaded file into a
+		// byte array
+		fileBytes, err := ioutil.ReadAll(file)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		// write this byte array to our temporary file
+		tempFile.Write(fileBytes)
+
+		data := tempFile.Name()
+		filename := data[8:] // split uploads/
+
+		// add filename to ctx
+		ctx := context.WithValue(r.Context(), "dataFile", filename)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// multiple image
+func UploadMultipleFile(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		err := r.ParseMultipartForm(200000) //grab the multipart form
+		if err != nil {
+			fmt.Fprintln(w, err)
+			return
+		}
+
+		formdata := r.MultipartForm
+
+		//get the *fileheader
+		files := formdata.File["image"]
+
+		for i, _ := range files {
+			file, err := files[i].Open()
+			defer file.Close()
+			if err != nil {
+				fmt.Fprintln(w, err)
+				return
+			}
+
+			out, err := os.Create("/uploads" + files[i].Filename)
+
+			defer out.Close()
+			if err != nil {
+				fmt.Fprintln(w, "Unable to create the file for writing. Check your write access privilege")
+				return
+			}
+
+			_, err = io.Copy(out, file)
+
+			if err != nil {
+				fmt.Fprintln(w, err)
+				return
+			}
+
+			fmt.Fprintf(w, "Files uploaded successfully")
+			fmt.Fprintf(w, files[i].Filename)
+		}
+	})
 }

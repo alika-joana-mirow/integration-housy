@@ -56,7 +56,7 @@ function AddProperty() {
     // Create image url for preview
     if (e.target.type === "file") {
       let url = URL.createObjectURL(e.target.files[0]);
-      console.log("ini data blob", url);
+      console.log("data blob", url);
       setPreview(url);
     }
   };
@@ -65,11 +65,11 @@ function AddProperty() {
   const handleSubmit = useMutation(async (e) => {
     try {
       e.preventDefault();
-      console.log("ini data productmu", form);
+      console.log("data product", form);
       const formData = new FormData();
       formData.append("image", form.image[0]);
       formData.append("name", form.nameProperty);
-      formData.append("city_name", form.city);
+      formData.append("city", form.city);
       formData.append("address", form.address);
       formData.append("price", form.price);
       formData.append("amenities", JSON.stringify(form.amenities));

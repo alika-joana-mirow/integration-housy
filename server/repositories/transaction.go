@@ -1,77 +1,80 @@
 package repositories
 
 import (
-	"housy/models"
+	"be/models"
 
 	"gorm.io/gorm"
 )
 
 type TransactionRepository interface {
-	FindTransaction() ([]models.Transaction, error)
-	GetTransaction(ID int) (models.Transaction, error)
+	FindOrders() ([]models.Transaction, error)
+	GetOrderByUserId(ID int) ([]models.Transaction, error)
+	AddTransaction(transactions models.Transaction) (models.Transaction, error)
+	DeleteOrder(transactions models.Transaction) (models.Transaction, error)
+
+	GetOrder(ID int) (models.Transaction, error)
 	GetOneTransaction(ID string) (models.Transaction, error)
-	CreateTransaction(Transaction models.Transaction) (models.Transaction, error)
-	// UpdateTransaction(Transaction models.Transaction) (models.Transaction, error)
 	UpdateTransaction(status string, ID string) error
-	DeleteTransaction(Transaction models.Transaction) (models.Transaction, error)
-	
 }
 
 func RepositoryTransaction(db *gorm.DB) *repository {
 	return &repository{db}
 }
 
-func (r *repository) FindTransaction() ([]models.Transaction, error) {
-	var transaction []models.Transaction
-	err := r.db.Preload("User").Preload("House").Find(&transaction).Error
+func (r *repository) FindOrders() ([]models.Transaction, error) {
+	var transactions []models.Transaction
+	err := r.db.Preload("Housy.City").Preload("Housy.User").Preload("User").Find(&transactions).Error
 
-	return transaction, err
+	return transactions, err
 }
 
-func (r *repository) GetTransaction(ID int) (models.Transaction, error) {
-	var transaction models.Transaction
-	err := r.db.Preload("User").Preload("House").First(&transaction, ID).Error
+func (r *repository) GetOrder(ID int) (models.Transaction, error) {
+	var transaction models.Transaction //baru tak tmbhin housy.user
+	err := r.db.Preload("Housy.City").Preload("Housy.User").Preload("User").First(&transaction, "id = ?", ID).Error
 
 	return transaction, err
 }
 
 func (r *repository) GetOneTransaction(ID string) (models.Transaction, error) {
 	var transaction models.Transaction
-	err := r.db.Preload("House").Preload("User").First(&transaction, "id = ?", ID).Error
+	err := r.db.Preload("Housy").Preload("Housy.User").Preload("User").First(&transaction, "id = ?", ID).Error
 
 	return transaction, err
 }
 
-func (r *repository) CreateTransaction(transaction models.Transaction) (models.Transaction, error) {
-	err := r.db.Create(&transaction).Error
+func (r *repository) GetOrderByUserId(ID int) ([]models.Transaction, error) {
+	var orderUser []models.Transaction
+	err := r.db.Preload("Housy").Preload("User").Where(&orderUser, "user_id = ?", ID).Error
 
-	return transaction, err
+	return orderUser, err
 }
 
-// func (r *repository) UpdateTransaction(transaction models.Transaction) (models.Transaction, error) {
-// 	err := r.db.Save(&transaction).Error
-
-// 	return transaction, err
-// }
-
+// update status
 func (r *repository) UpdateTransaction(status string, ID string) error {
 	var transaction models.Transaction
-	r.db.Preload("House").Preload("User").First(&transaction, ID) // 112233
+	r.db.Preload("Housy").First(&transaction, ID)
 
-	// if status != transaction.StatusPayment && status == "success" {
-	// 	var house models.House
-	// 	r.db.First(&house, transaction.House.ID)
-	// 	r.db.Save(&house)
-	// }
+	if status != transaction.Status && status == "success" {
+		var housy models.Housy
+		r.db.First(&housy, transaction.Housy.ID)
+		// housy.Qty = Housy.Qty - 1
+		r.db.Save(&housy)
+	}
 
-	transaction.StatusPayment = status
+	transaction.Status = status
 	err := r.db.Save(&transaction).Error
 
 	return err
 }
 
-func (r *repository) DeleteTransaction(transaction models.Transaction) (models.Transaction, error) {
-	err := r.db.Delete(&transaction).Error
+func (r *repository) AddTransaction(transactions models.Transaction) (models.Transaction, error) {
+	err := r.db.Preload("Housy.City").Create(&transactions).Error
 
-	return transaction, err
+	return transactions, err
+}
+
+func (r *repository) DeleteOrder(transactions models.Transaction) (models.Transaction, error) {
+	err := r.db.Delete(&transactions).Error
+
+	return transactions, err
 }

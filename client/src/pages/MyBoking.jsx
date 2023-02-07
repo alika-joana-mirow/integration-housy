@@ -16,30 +16,12 @@ import { UserContext } from "../context/userContext";
 import { useMutation, useQuery } from "react-query";
 import { API } from "../config/api";
 import Moment from "react-moment";
-// import jwt from "jwt-decode";
 
-// function PayModal(props) {
-//   return (
-//     <Modal {...props} size="lg" aria-labelledby="contained-modal-title-vcenter" centered>
-//       <Modal.Body>
-//         <p>
-//           Pembayaran Anda Akan di Konfirmasi dalam 1 x 24 Jam Untuk melihat pesanan{" "}
-//           <Button onClick={props.onHide} className="btn btn-dark bg-white text-primary fw-bold p-0 m-0 border-0">
-//             Disini
-//           </Button>
-//           Terimakasih
-//         </p>
-//       </Modal.Body>
-//     </Modal>
-//   );
-// }
 
 export default function MyBooking(props) {
   const getData = JSON.parse(localStorage.getItem("check_in"));
 
-  // const getToken = localStorage.getItem("token");
   let history = useNavigate();
-  // const hasilDecode = jwt(getToken);
 
   const { id } = useParams();
 
@@ -76,30 +58,25 @@ export default function MyBooking(props) {
         attachment: "image.png",
       });
 
-      const tokenBaru = response.data.data.token;
-      console.log("habis add transaction tokennnnnn : ", response);
+      const newToken = response.data.data.token;
+      console.log("token : ", response);
 
-      // const token = response.data.data.token;
-      console.log("ini tokennnnn", response);
-      console.log("ini tokennnnnbaru", tokenBaru);
+      console.log("this is token", response);
+      console.log("new token", newToken);
 
-      window.snap.pay(tokenBaru, {
+      window.snap.pay(newToken, {
         onSuccess: function (result) {
-          /* You may add your own implementation here */
           console.log(result);
           history.push("/profile");
         },
         onPending: function (result) {
-          /* You may add your own implementation here */
           console.log(result);
           history.push("/profile");
         },
         onError: function (result) {
-          /* You may add your own implementation here */
           console.log(result);
         },
         onClose: function () {
-          /* You may add your own implementation here */
           alert("you closed the popup without finishing the payment");
         },
       });
@@ -109,15 +86,11 @@ export default function MyBooking(props) {
   });
 
   useEffect(() => {
-    //change this to the script source you want to load, for example this is snap.js sandbox env
     const midtransScriptUrl = "https://app.sandbox.midtrans.com/snap/snap.js";
-    //change this according to your client-key
     const myMidtransClientKey = "SB-Mid-client-PXZXQGaKnNSLWukm";
 
     let scriptTag = document.createElement("script");
     scriptTag.src = midtransScriptUrl;
-    // optional if you want to set script attribute
-    // for example snap.js have data-client-key attribute
     scriptTag.setAttribute("data-client-key", myMidtransClientKey);
 
     document.body.appendChild(scriptTag);
@@ -194,7 +167,6 @@ export default function MyBooking(props) {
               <img src={NoteImg} alt="" style={{ width: 150 }} />
               <Button
                 type="submit"
-                //onSubmit={handleChangePhoto}
                 className="position-relative p-0 m-0 bg text-dark bd"
                 variant="outline-primary"
               >
@@ -203,7 +175,6 @@ export default function MyBooking(props) {
                   id="formFile"
                   type="file"
                   name="image"
-                  //         onChange={handleChangePhoto}
                   style={{ cursor: "pointer", opacity: 0 }}
                 />
                 <span className="d-block py-2 px-3">Upload Image</span>

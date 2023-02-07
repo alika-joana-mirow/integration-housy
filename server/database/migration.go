@@ -1,16 +1,16 @@
 package database
 
 import (
+	"be/models"
+	"be/pkg/mysql"
 	"fmt"
-	"housy/models"
-	"housy/pkg/mysql"
 )
 
-// Automatic Migration if Running App
 func RunMigration() {
 	err := mysql.DB.AutoMigrate(
 		&models.User{},
-		&models.House{},
+		&models.City{},
+		&models.Housy{},
 		&models.Transaction{},
 	)
 

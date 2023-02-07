@@ -1,14 +1,14 @@
 package handlers
 
 import (
+	authdto "be/dto/auth"
+	dto "be/dto/result"
+	"be/models"
+	"be/pkg/bcrypt"
+	jwtToken "be/pkg/jwt"
+	"be/repositories"
 	"encoding/json"
 	"fmt"
-	authdto "housy/dto/auth"
-	dto "housy/dto/result"
-	"housy/models"
-	"housy/pkg/bcrypt"
-	jwtToken "housy/pkg/jwt"
-	"housy/repositories"
 	"log"
 	"net/http"
 	"time"
@@ -25,23 +25,10 @@ func HandlerAuth(AuthRepository repositories.AuthRepository) *handlerAuth {
 	return &handlerAuth{AuthRepository}
 }
 
-func (h *handlerAuth) SignUp(w http.ResponseWriter, r *http.Request) {
+func (h *handlerAuth) Register(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	// dataContex := r.Context().Value("dataFile") // add this code
-	// filename := dataContex.(string)             // add this code
-
-	request := authdto.SignUpRequest{
-		Fullname:   r.FormValue("fullname"),
-		Username:   r.FormValue("username"),
-		Email:      r.FormValue("email"),
-		Password:   r.FormValue("password"),
-		ListAsRole: r.FormValue("listAsRole"),
-		Gender:     r.FormValue("gender"),
-		Phone:      r.FormValue("phone"),
-		Address:    r.FormValue("address"),
-	}
-
+	request := new(authdto.RegisterRequest)
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -53,7 +40,7 @@ func (h *handlerAuth) SignUp(w http.ResponseWriter, r *http.Request) {
 	err := validation.Struct(request)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
+		response := dto.ErrorResult{Code: (http.StatusBadRequest), Message: err.Error()}
 		json.NewEncoder(w).Encode(response)
 		return
 	}
@@ -61,50 +48,39 @@ func (h *handlerAuth) SignUp(w http.ResponseWriter, r *http.Request) {
 	password, err := bcrypt.HashingPassword(request.Password)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
+		response := dto.ErrorResult{Code: (http.StatusInternalServerError), Message: err.Error()}
 		json.NewEncoder(w).Encode(response)
+		return
 	}
 
 	user := models.User{
-		Fullname:   request.Fullname,
-		Username:   request.Username,
-		Email:      request.Email,
-		Password:   password,
-		ListAsRole: request.ListAsRole,
-		Gender:     request.Gender,
-		Phone:      request.Phone,
-		Address:    request.Address,
+		Fullname: request.Fullname,
+		Username: request.Username,
+		Email:    request.Email,
+		Password: password,
+		ListAs:   request.ListAs,
+		Gender:   request.Gender,
+		Phone:    request.Phone,
+		Address:  request.Address,
 	}
 
-	data, err := h.AuthRepository.SignUp(user)
+	data, err := h.AuthRepository.Register(user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
+		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
 		json.NewEncoder(w).Encode(response)
-	}
-
-	signUpResponse := authdto.SignUpResponse{
-		ID:         data.ID,
-		Username:   data.Username,
-		Fullname:   data.Fullname,
-		Email:      data.Email,
-		Password:   data.Password,
-		Gender:     data.Gender,
-		Phone:      data.Phone,
-		ListAsRole: data.ListAsRole,
-		Address:    data.Address,
-		Message:    "Succesfully Sign Up!",
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: signUpResponse}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponse(data)}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handlerAuth) SignIn(w http.ResponseWriter, r *http.Request) {
+func (h *handlerAuth) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	request := new(authdto.SignInRequest)
+	request := new(authdto.LoginRequest)
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -117,11 +93,11 @@ func (h *handlerAuth) SignIn(w http.ResponseWriter, r *http.Request) {
 		Password: request.Password,
 	}
 
-	// Check email
-	user, err := h.AuthRepository.SignIn(user.Username)
+	// Check username
+	user, err := h.AuthRepository.Login(user.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
+		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: "wrong username!"}
 		json.NewEncoder(w).Encode(response)
 		return
 	}
@@ -130,7 +106,7 @@ func (h *handlerAuth) SignIn(w http.ResponseWriter, r *http.Request) {
 	isValid := bcrypt.CheckPasswordHash(request.Password, user.Password)
 	if !isValid {
 		w.WriteHeader(http.StatusBadRequest)
-		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: "wrong email or password"}
+		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: "wrong password!"}
 		json.NewEncoder(w).Encode(response)
 		return
 	}
@@ -144,35 +120,29 @@ func (h *handlerAuth) SignIn(w http.ResponseWriter, r *http.Request) {
 	if errGenerateToken != nil {
 		log.Println(errGenerateToken)
 		fmt.Println("Unauthorize")
+		fmt.Println("ini token", token)
 		return
 	}
 
-	signInResponse := authdto.SignInResponse{
-		ID:         user.ID,
-		Username:   user.Username,
-		ListAsRole: user.ListAsRole,
-		Fullname:   user.Fullname,
-		Email:      user.Email,
-		Password:   user.Password,
-		Gender:     user.Gender,
-		Phone:      user.Phone,
-		Address:    user.Address,
-		Token:      token,
+	loginResponse := authdto.LoginResponse{
+		Username: user.Username,
+		ListAs:   user.ListAs,
+		Token:    token,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	response := dto.SuccessResult{Code: http.StatusOK, Data: signInResponse}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: loginResponse}
 	json.NewEncoder(w).Encode(response)
 
 }
 
 func (h *handlerAuth) CheckAuth(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-type", "application/json")
 
 	userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
 	userId := int(userInfo["id"].(float64))
 
-	// Check User by Id
+	// check user by id
 	user, err := h.AuthRepository.Getuser(userId)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -182,16 +152,10 @@ func (h *handlerAuth) CheckAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	CheckAuthResponse := authdto.CheckAuthResponse{
-		ID:         user.ID,
-		Fullname:   user.Fullname,
-		Email:      user.Email,
-		Password: user.Password,
+		Id:       user.ID,
 		Username: user.Username,
-		Gender: user.Gender,
-		Phone: user.Phone,
-		Address: user.Address,
-		ListAsRole: user.ListAsRole,
-
+		Email:    user.Email,
+		ListAs:   user.ListAs,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

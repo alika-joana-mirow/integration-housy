@@ -11,12 +11,12 @@ export default function SignUp(props) {
   let navigate = useNavigate();
   const [message, setMessage] = useState(null);
   const [userSignUp, setUserSignUp] = useState({
-    fullName: "",
-    userName: "",
+    fullname: "",
+    username: "",
     email: "",
     password: "",
     phone: "",
-    listAsRole: "",
+    listAs: "",
     gender: "",
     address: "",
   });
@@ -25,13 +25,6 @@ export default function SignUp(props) {
     props.onHide();
     props.openSignin();
   };
-
-  // const handleOnSubmit = (e) => {
-  //   e.preventDefault();
-  //   localStorage.setItem("UserSignUp", JSON.stringify(userSignUp));
-  //   redirectSignin();
-  //   alert("Register Success!");
-  // };
 
   const handleOnChange = (e) => {
     setUserSignUp({
@@ -43,7 +36,8 @@ export default function SignUp(props) {
   const handleOnSubmit = useMutation(async (e) => {
     try {
       e.preventDefault();
-      const response = await API.post("/sign-up", userSignUp);
+      const response = await API.post("/register", userSignUp);
+      console.log("ini register: ", response);
 
       const alert = (
         <Alert variant="success" className="py-1">
@@ -51,7 +45,7 @@ export default function SignUp(props) {
         </Alert>
       );
       setMessage(alert);
-      console.log("habis register : ", response);
+      console.log("register : ", response);
 
       // Handling response here
     } catch (error) {
@@ -74,7 +68,7 @@ export default function SignUp(props) {
         }}
       >
         <h1 className="fw-bold text-center my-5">Sign Up</h1>
-        {/* {message && message} */}
+        
         <Form
           onSubmit={(e) => handleOnSubmit.mutate(e)}
           style={{
@@ -82,29 +76,64 @@ export default function SignUp(props) {
             overflow: "auto",
           }}
         >
-          <Form.Group className="mb-3" controlId="fullName">
-            <Form.Label className="fw-bold">Full Name</Form.Label>
-            <Form.Control type="text" placeholder="" name="fullName" value={userSignUp.fullName} onChange={handleOnChange} />
+          <Form.Group className="mb-3" controlId="fullname">
+            <Form.Label className="fw-bold">Fullname</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder=""
+              name="fullname"
+              value={userSignUp.fullname}
+              onChange={handleOnChange}
+            />
           </Form.Group>
-          <Form.Group className="mb-3" controlId="userName">
+          <Form.Group className="mb-3" controlId="username">
             <Form.Label className="fw-bold">Username</Form.Label>
-            <Form.Control type="text" placeholder="" name="userName" value={userSignUp.userName} onChange={handleOnChange} />
+            <Form.Control
+              type="text"
+              placeholder=""
+              name="username"
+              value={userSignUp.username}
+              onChange={handleOnChange}
+            />
           </Form.Group>
           <Form.Group className="mb-3" controlId="email">
             <Form.Label className="fw-bold">Email</Form.Label>
-            <Form.Control type="email" placeholder="Enter email" name="email" value={userSignUp.email} onChange={handleOnChange} />
+            <Form.Control
+              type="email"
+              placeholder="Enter email"
+              name="email"
+              value={userSignUp.email}
+              onChange={handleOnChange}
+            />
           </Form.Group>
           <Form.Group className="mb-3" controlId="phone">
             <Form.Label className="fw-bold">phone</Form.Label>
-            <Form.Control type="text" placeholder="Enter phone number" name="phone" value={userSignUp.phone} onChange={handleOnChange} />
+            <Form.Control
+              type="text"
+              placeholder="Enter phone number"
+              name="phone"
+              value={userSignUp.phone}
+              onChange={handleOnChange}
+            />
           </Form.Group>
           <Form.Group className="mb-3" controlId="password">
             <Form.Label className="fw-bold">Password</Form.Label>
-            <Form.Control type="password" placeholder="Password" name="password" value={userSignUp.password} onChange={handleOnChange} />
+            <Form.Control
+              type="password"
+              placeholder="Password"
+              name="password"
+              value={userSignUp.password}
+              onChange={handleOnChange}
+            />
           </Form.Group>
-          <Form.Group className="mb-3 " controlId="listAsRole">
+          <Form.Group className="mb-3 " controlId="listAs">
             <Form.Label className="fw-bold">List As</Form.Label>
-            <Form.Select name="listAsRole" aria-label="Default select example" value={userSignUp.listAsRole} onChange={handleOnChange}>
+            <Form.Select
+              name="listAs"
+              aria-label="Default select example"
+              value={userSignUp.listAs}
+              onChange={handleOnChange}
+            >
               <option>~Select~</option>
               <option value="Tenant">Tenant</option>
               <option value="Owner">Owner</option>
@@ -112,7 +141,12 @@ export default function SignUp(props) {
           </Form.Group>
           <Form.Group className="mb-3" controlId="gender">
             <Form.Label className="fw-bold">Gender</Form.Label>
-            <Form.Select name="gender" aria-label="Default select example" value={userSignUp.gender} onChange={handleOnChange}>
+            <Form.Select
+              name="gender"
+              aria-label="Default select example"
+              value={userSignUp.gender}
+              onChange={handleOnChange}
+            >
               <option>~Select~</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
@@ -120,10 +154,22 @@ export default function SignUp(props) {
           </Form.Group>
           <Form.Group className="mb-3 " controlId="alamat">
             <Form.Label className="fw-bold">Address</Form.Label>
-            <Form.Control className="rs" as="textarea" name="address" style={{ height: "100px" }} value={userSignUp.address} onChange={handleOnChange} />
+            <Form.Control
+              className="rs"
+              as="textarea"
+              name="address"
+              style={{ height: "100px" }}
+              value={userSignUp.address}
+              onChange={handleOnChange}
+            />
           </Form.Group>
 
-          <Button onClick={(e) => redirectSignin(e)} className="w-100" variant="primary" type="submit">
+          <Button
+            onClick={(e) => redirectSignin(e)}
+            className="w-100"
+            variant="primary"
+            type="submit"
+          >
             Submit
           </Button>
         </Form>

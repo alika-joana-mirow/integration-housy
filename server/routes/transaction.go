@@ -1,22 +1,22 @@
 package routes
 
 import (
-	"housy/handlers"
-	"housy/pkg/middleware"
-	"housy/pkg/mysql"
-	"housy/repositories"
+	"be/handlers"
+	"be/pkg/middleware"
+	"be/pkg/mysql"
+	"be/repositories"
 
 	"github.com/gorilla/mux"
 )
 
 func TransactionRoutes(r *mux.Router) {
-	transactionRepository := repositories.RepositoryTransaction(mysql.DB)
-	h := handlers.HandlerTransaction(transactionRepository)
+	TransactionRepository := repositories.RepositoryTransaction(mysql.DB)
+	h := handlers.HandlerTransaction(TransactionRepository)
 
-	r.HandleFunc("/transactions", h.FindTransactions).Methods("GET")
-	r.HandleFunc("/transaction/{id}", middleware.Auth(h.GetTransaction)).Methods("GET")
-	r.HandleFunc("/transaction", h.CreateTransaction).Methods("POST")
-	r.HandleFunc("/transaction/{id}", middleware.Auth(h.DeleteTransaction)).Methods("DELETE")
+	r.HandleFunc("/orders", middleware.Auth(h.FindOrders)).Methods("GET")
+	r.HandleFunc("/order", middleware.Auth(h.GetOrder)).Methods("GET")
+	r.HandleFunc("/transaction", middleware.Auth(h.AddTransaction)).Methods("POST")
+	// r.HandleFunc("/order/{id}", h.UpdateOrder).Methods("PATCH")
+	r.HandleFunc("/order/{id}", middleware.Auth(h.DeleteOrder)).Methods("DELETE")
 	r.HandleFunc("/notification", h.Notification).Methods("POST")
-	
 }

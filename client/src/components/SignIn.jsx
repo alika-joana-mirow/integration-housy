@@ -12,7 +12,7 @@ import { UserContext } from "../context/userContext";
 
 export default function SignIn(props) {
   const navigate = useNavigate();
-  const [state, dispatch] = useContext(UserContext);
+  const [_, dispatch] = useContext(UserContext);
   const [userSignIn, setUserSignIn] = useState({
     userName: "",
     password: "",
@@ -30,7 +30,7 @@ export default function SignIn(props) {
     try {
       e.preventDefault();
 
-      const response = await API.post("/sign-in", userSignIn);
+      const response = await API.post("/login", userSignIn);
       dispatch({
         type: "LOGIN_SUCCESS",
         payload: response.data.data,
@@ -38,7 +38,7 @@ export default function SignIn(props) {
       alert("login succses!");
       props.onHide();
     } catch (error) {
-      alert("email or password wrong!");
+      alert("username or password wrong!");
       console.log(error);
     }
   });

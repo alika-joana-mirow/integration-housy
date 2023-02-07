@@ -17,7 +17,7 @@ import { UserContext } from "../context/userContext";
 
 function DropdwonLogin(props) {
   const [state, dispatch] = useContext(UserContext);
-  console.log(state.user.listAsRole);
+  console.log(state.user.listAs);
 
   let navigate = useNavigate();
 
@@ -31,8 +31,17 @@ function DropdwonLogin(props) {
 
   return (
     <>
-      <Dropdown align="end" style={{ color: "white", backgroundColor: "white", border: "white" }} id="dropdown-basic-button" title="Dropdown button">
-        <DropdownToggle className="p-0 rounded-circle" style={{ width: "50px", height: "50px" }} variant="white">
+      <Dropdown
+        align="end"
+        style={{ color: "white", backgroundColor: "white", border: "white" }}
+        id="dropdown-basic-button"
+        title="Dropdown button"
+      >
+        <DropdownToggle
+          className="p-0 rounded-circle"
+          style={{ width: "50px", height: "50px" }}
+          variant="white"
+        >
           <Image roundedCircle className="si" src={fp} />
         </DropdownToggle>
         <DropdownMenu>
@@ -45,7 +54,7 @@ function DropdwonLogin(props) {
             <img className="pe-2" src={User} alt="" />
             <span style={{ color: "black" }}> Profile</span>
           </Dropdown.Item>
-          {state.user.listAsRole === "Tenant" ? (
+          {state.user.listAs === "Tenant" ? (
             <>
               <Dropdown.Item
                 onClick={() => {

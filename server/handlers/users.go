@@ -1,33 +1,37 @@
 package handlers
 
 import (
-	"encoding/json"
-	authdto "housy/dto/auth"
-	dto "housy/dto/result"
-	usersdto "housy/dto/users"
-	"housy/models"
-	"housy/repositories"
-	"net/http"
-	"strconv"
+	dto "be/dto/result"
+	usersdto "be/dto/users"
+	"be/models"
+	"be/pkg/bcrypt"
+	"be/repositories"
 
-	"github.com/gorilla/mux"
+	"encoding/json"
+	"net/http"
+
+	"github.com/golang-jwt/jwt/v4"
 )
 
-type handlerUser struct {
+type handler struct {
 	UserRepository repositories.UserRepository
 }
 
-func HandlerUser(UserRepository repositories.UserRepository) *handlerUser {
-	return &handlerUser{UserRepository}
+// Create `path_file` Global variable here ...
+var path_file = "http://localhost:8000/uploads/"
+
+func HandlerUser(UserRepository repositories.UserRepository) *handler {
+	return &handler{UserRepository}
 }
 
-func (h *handlerUser) FindUsers(w http.ResponseWriter, r *http.Request) {
+func (h *handler) FindUsers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	users, err := h.UserRepository.FindUsers()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err.Error())
+		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
+		json.NewEncoder(w).Encode(response)
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -35,30 +39,38 @@ func (h *handlerUser) FindUsers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handlerUser) GetUser(w http.ResponseWriter, r *http.Request) {
+func (h *handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+	userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
+	userId := int(userInfo["id"].(float64))
 
-	user, err := h.UserRepository.GetUser(id)
+	var user models.User
+
+	user, err := h.UserRepository.GetUser(userId)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
 		json.NewEncoder(w).Encode(response)
 		return
 	}
+	user.Image = path_file + user.Image
 
 	w.WriteHeader(http.StatusOK)
 	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponse(user)}
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *handlerUser) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content_type", "application/json")
 
-	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+	userInfo := r.Context().Value("userInfo").(jwt.MapClaims)
+	userId := int(userInfo["id"].(float64))
 
-	user, err := h.UserRepository.GetUser(id)
+	dataContex := r.Context().Value("dataFile")
+	filename := dataContex.(string)
+
+	user, err := h.UserRepository.GetUser(userId)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
@@ -66,95 +78,46 @@ func (h *handlerUser) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := h.UserRepository.DeleteUser(user)
+	if user.Image != "false" {
+		user.Image = path_file + filename
+	}
+
+	password, err := bcrypt.HashingPassword(user.Password)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
+		response := dto.ErrorResult{Code: (http.StatusInternalServerError), Message: err.Error()}
 		json.NewEncoder(w).Encode(response)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: data}
-	json.NewEncoder(w).Encode(response)
-}
-
-func convertResponse(u models.User) usersdto.UserResponse {
-	return usersdto.UserResponse{
-		ID:         u.ID,
-		Fullname:   u.Fullname,
-		Username:   u.Username,
-		Email:      u.Email,
-		Password:   u.Password,
-		ListAsRole: u.ListAsRole,
+	if user.Password != "" {
+		user.Password = password
 	}
-}
-
-func (h *handlerUser) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	request := new(authdto.SignUpRequest)
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
-		json.NewEncoder(w).Encode(response)
-		return
-	}
-
-	id, _ := strconv.Atoi(mux.Vars(r)["id"])
-	user, err := h.UserRepository.GetUser(int(id))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
-		json.NewEncoder(w).Encode(response)
-		return
-	}
-
-	if request.Fullname != "" {
-		user.Fullname = request.Fullname
-	}
-
-	if request.Email != "" {
-		user.Email = request.Email
-	}
-
-	if request.Username != "" {
-		user.Username = request.Username
-	}
-
-	if request.Password != "" {
-		user.Password = request.Password
-	}
-
-	if request.ListAsRole != "" {
-		user.ListAsRole = request.ListAsRole
-	}
-
-	if request.Address != "" {
-		user.Address = request.Address
-	}
-
-	if request.Gender != "" {
-		user.Gender = request.Gender
-	}
-
-	if request.Phone != "" {
-		user.Phone = request.Phone
-	}
-
-	// if request.Profile.Image != "" {
-	// 	user.Profile.Image = request.Profile.Image
-	// }
 
 	data, err := h.UserRepository.UpdateUser(user)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		response := dto.ErrorResult{Code: http.StatusInternalServerError, Message: err.Error()}
+		w.WriteHeader(http.StatusBadRequest)
+		response := dto.ErrorResult{Code: http.StatusBadRequest, Message: err.Error()}
 		json.NewEncoder(w).Encode(response)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := dto.SuccessResult{Code: http.StatusOK, Data: data}
+	response := dto.SuccessResult{Code: http.StatusOK, Data: convertResponse(data)}
 	json.NewEncoder(w).Encode(response)
+}
+
+func convertResponse(u models.User) usersdto.UserRespone {
+	return usersdto.UserRespone{
+		ID:       u.ID,
+		Fullname: u.Fullname,
+		Username: u.Username,
+		Email:    u.Email,
+		Password: u.Password,
+		Gender:   u.Gender,
+		ListAs:   u.ListAs,
+		Phone:    u.Phone,
+		Address:  u.Address,
+		Image:    u.Image,
+	}
 }

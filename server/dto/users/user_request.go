@@ -1,6 +1,6 @@
-package authdto
+package usersdto
 
-type RegisterRequest struct {
+type CreateUserRequest struct {
 	Fullname string `json:"fullname" form:"fullname" validate:"required"`
 	Username string `json:"username" form:"username" validate:"required"`
 	Email    string `json:"email" form:"email" validate:"required"`
@@ -11,7 +11,10 @@ type RegisterRequest struct {
 	Address  string `json:"address" form:"address" validate:"required"`
 }
 
-type LoginRequest struct {
-	Username string `json:"username" gorm:"type: varchar(255)" validate:"required"`
-	Password string `json:"password" gorm:"type: varchar(255)" validate:"required"`
+type UpdateUserRequest struct {
+	Fullname string `json:"fullname" form:"name"`
+	Username string `json:"username" form:"username"`
+	Email    string `json:"email" form:"email"`
+	Password string `json:"password" form:"password"`
+	Image    string `json:"image" form:"image"`
 }

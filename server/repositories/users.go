@@ -1,7 +1,7 @@
 package repositories
 
 import (
-	"housy/models"
+	"be/models"
 
 	"gorm.io/gorm"
 )
@@ -9,8 +9,11 @@ import (
 type UserRepository interface {
 	FindUsers() ([]models.User, error)
 	GetUser(ID int) (models.User, error)
-	DeleteUser(user models.User) (models.User, error)
 	UpdateUser(user models.User) (models.User, error)
+}
+
+type repository struct {
+	db *gorm.DB
 }
 
 func RepositoryUser(db *gorm.DB) *repository {
@@ -31,14 +34,8 @@ func (r *repository) GetUser(ID int) (models.User, error) {
 	return user, err
 }
 
-func (r *repository) DeleteUser(user models.User) (models.User, error) {
-	err := r.db.Delete(&user).Error
-
-	return user, err
-}
-
 func (r *repository) UpdateUser(user models.User) (models.User, error) {
-	err := r.db.Save(&user).Error // Using Save method
+	err := r.db.Save(&user).Error
 
 	return user, err
 }

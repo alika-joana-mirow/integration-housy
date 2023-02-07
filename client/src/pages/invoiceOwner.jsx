@@ -72,7 +72,7 @@ export default function Invoice(props) {
                     </div>
                     <div className="ms-3 d-flex flex-column ">
                       <span>Type of Rent</span>
-                      <span>{Data.rent}</span>
+                      <span>{Data.typerent}</span>
                     </div>
                   </div>
                 </div>
@@ -85,10 +85,6 @@ export default function Invoice(props) {
                   className="position-relative p-0 m-0 bg text-dark bd"
                   variant="outline-primary"
                 ></Button>
-                {/* <Form.Group controlId="formFile" className="mb-3">
-              <Form.Label>upload proof of payment</Form.Label>
-              <Form.Control type="file" />
-            </Form.Group> */}
               </Col>
             </Row>
             <Row className="d-flex">
@@ -114,10 +110,10 @@ export default function Invoice(props) {
                     <p className="m-0">1</p>
                   </Col>
                   <Col className="d-flex align-items-center" md="auto" lg={3}>
-                    <p className="m-0">{Profile.fullName}</p>
+                    <p className="m-0">{Profile.fullname}</p>
                   </Col>
                   <Col className="d-flex align-items-center" md="auto" lg={3}>
-                    <p className="m-0">{Profile.gendre}</p>
+                    <p className="m-0">{Profile.gender}</p>
                   </Col>
                   <Col className="d-flex align-items-center" md="auto" lg={3}>
                     <p className="m-0">{Profile.phone}</p>

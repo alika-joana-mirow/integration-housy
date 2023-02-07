@@ -1,14 +1,15 @@
 package repositories
 
 import (
-	"housy/models"
+	"be/models"
 
+	// "github.com/labstack/gommon/email"
 	"gorm.io/gorm"
 )
 
 type AuthRepository interface {
-	SignUp(user models.User) (models.User, error)
-	SignIn(username string) (models.User, error)
+	Register(user models.User) (models.User, error)
+	Login(username string) (models.User, error)
 	Getuser(ID int) (models.User, error)
 }
 
@@ -16,15 +17,16 @@ func RepositoryAuth(db *gorm.DB) *repository {
 	return &repository{db}
 }
 
-func (r *repository) SignUp(user models.User) (models.User, error) {
+func (r *repository) Register(user models.User) (models.User, error) {
 	err := r.db.Create(&user).Error
 
 	return user, err
 }
 
-func (r *repository) SignIn(username string) (models.User, error) {
+func (r *repository) Login(username string) (models.User, error) {
 	var user models.User
-	err := r.db.Where("username = ?", username).First(&user).Error
+	err := r.db.First(&user, "username=?", username).Error
+
 	return user, err
 }
 

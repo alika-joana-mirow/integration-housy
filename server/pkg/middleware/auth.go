@@ -1,10 +1,10 @@
 package middleware
 
 import (
+	dto "be/dto/result"
+	jwtToken "be/pkg/jwt"
 	"context"
 	"encoding/json"
-	dto "housy/dto/result"
-	jwtToken "housy/pkg/jwt"
 	"net/http"
 	"strings"
 )
@@ -15,6 +15,7 @@ type Result struct {
 	Message string      `json:"message"`
 }
 
+// Create Auth function
 func Auth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
